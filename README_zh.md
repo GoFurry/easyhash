@@ -4,18 +4,18 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go&logoColor=white)
 
-**English | [中文文档](README_zh.md)**
+**中文文档 | [English](README.md)**
 
-A simple Go password hashing helper that provides create/verify helpers for MD5 (legacy only), PBKDF2, Argon2id, scrypt, and bcrypt, with built-in default parameters.
+一个简单的 Go 密码哈希工具库，提供 MD5（仅兼容）、PBKDF2、Argon2id、scrypt、bcrypt 的生成与校验函数，并内置默认参数。
 
-## Installation
+## 安装
 
 ```bash
-# If you use private modules, set GOPRIVATE to avoid public checksum database lookups.
+# 添加私有模块避免公网验证
 go get github.com/GoFurry/easyhash
 ```
 
-## Quick Start
+## 快速开始
 
 ```go
 package main
@@ -49,14 +49,13 @@ func main() {
 	ok = easyhash.VerifyBcrypt(pass, bcrypt)
 	fmt.Println("bcrypt:", ok)
 
-	// MD5 (legacy / not recommended)
+	// MD5（仅兼容/不推荐）
 	fmt.Println("md5:", easyhash.CreateMD5(pass))
 }
 ```
 
-## Notes
+## 说明
 
-- The default global salt is `DefaultSalt`, appended to the password before hashing.
-- Prefer `Argon2id` or `bcrypt` for password hashing.
-- Example code: `example/userPassword.go`.
-
+- 默认盐值为 `DefaultSalt`，在哈希前拼接到密码后。
+- 建议优先使用 `Argon2id` 或 `bcrypt`。
+- 示例代码见 `example/userPassword.go`。

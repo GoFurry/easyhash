@@ -3,6 +3,7 @@
 [![Last Version](https://img.shields.io/github/release/GoFurry/easyhash/all.svg?logo=github&color=brightgreen)](https://github.com/GoFurry/easyhash/releases)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go&logoColor=white)
+[![Go Report Card](https://goreportcard.com/badge/github.com/GoFurry/easyhash)](https://goreportcard.com/report/github.com/GoFurry/easyhash)
 
 **English | [中文文档](README_zh.md)**
 

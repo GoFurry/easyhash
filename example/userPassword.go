@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/GoFurry/easyhash"
+	"github.com/gofurry/easyhash"
 )
 
 func main() {

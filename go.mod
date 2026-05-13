@@ -1,4 +1,4 @@
-module github.com/GoFurry/easyhash
+module github.com/gofurry/easyhash
 
 go 1.26.0
 

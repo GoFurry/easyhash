@@ -1,9 +1,9 @@
 # easyhash
 
-[![Last Version](https://img.shields.io/github/release/GoFurry/easyhash/all.svg?logo=github&color=brightgreen)](https://github.com/GoFurry/easyhash/releases)
+[![Last Version](https://img.shields.io/github/release/gofurry/easyhash/all.svg?logo=github&color=brightgreen)](https://github.com/gofurry/easyhash/releases)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go&logoColor=white)
-[![Go Report Card](https://goreportcard.com/badge/github.com/GoFurry/easyhash)](https://goreportcard.com/report/github.com/GoFurry/easyhash)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gofurry/easyhash)](https://goreportcard.com/report/github.com/gofurry/easyhash)
 
 **中文文档 | [English](README.md)**
 
@@ -13,7 +13,7 @@
 
 ```bash
 # 添加私有模块避免公网验证
-go get github.com/GoFurry/easyhash
+go get github.com/gofurry/easyhash
 ```
 
 ## 快速开始
@@ -24,7 +24,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/GoFurry/easyhash"
+	"github.com/gofurry/easyhash"
 )
 
 func main() {

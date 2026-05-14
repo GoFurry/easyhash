@@ -1,6 +1,5 @@
-// Package easyhash provides secure password hashing utilities with multiple algorithms
-// including PBKDF2, Argon2, scrypt, and bcrypt. Each algorithm includes configurable
-// parameters and uses a global salt for additional security.
+// Package easyhash provides password hashing helpers and compatibility utilities
+// for PBKDF2, Argon2id, scrypt, bcrypt, and legacy MD5 verification.
 
 package easyhash
 
@@ -22,7 +21,8 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-// DefaultSalt is a global salt used across all hashing algorithms for additional security
+// DefaultSalt is a package-wide password suffix retained for backwards compatibility.
+// It behaves closer to a global pepper than to a per-hash random salt.
 const DefaultSalt = "AwesomeGolangCrypto"
 
 // ====================== MD5 ======================

@@ -7,12 +7,16 @@
 
 **中文文档 | [English](README.md)**
 
-一个简单的 Go 密码哈希工具库，提供 MD5（仅兼容）、PBKDF2、Argon2id、scrypt、bcrypt 的生成与校验函数，并内置默认参数。
+`easyhash` 是一个轻量级 Go 哈希工具库，当前聚焦于密码哈希、哈希校验，以及后续可扩展的迁移能力。
+
+这次骨架初始化之后，仓库会同时保留两层能力：
+
+- 兼容现有使用者的低层按算法 API
+- 面向后续演进的高层统一 API 骨架
 
 ## 安装
 
 ```bash
-# 添加私有模块避免公网验证
 go get github.com/gofurry/easyhash
 ```
 
@@ -23,40 +27,74 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofurry/easyhash"
 )
 
 func main() {
-	pass := "12345678"
+	password := "12345678"
 
-	// PBKDF2
-	pbkdf2, _ := easyhash.CreatePBKDF2(easyhash.DefaultPBKDF2(), pass)
-	ok, _ := easyhash.VerifyPBKDF2(pass, pbkdf2)
-	fmt.Println("pbkdf2:", ok)
+	hash, err := easyhash.Hash(password)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Argon2id
-	argon2, _ := easyhash.CreateArgon2(easyhash.DefaultArgon2(), pass)
-	ok, _ = easyhash.VerifyArgon2(pass, argon2)
-	fmt.Println("argon2:", ok)
+	ok, err := easyhash.Verify(password, hash)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Scrypt
-	scrypt, _ := easyhash.CreateScrypt(easyhash.DefaultScrypt(), pass)
-	ok, _ = easyhash.VerifyScrypt(pass, scrypt)
-	fmt.Println("scrypt:", ok)
-
-	// Bcrypt
-	bcrypt, _ := easyhash.CreateBcrypt(12, pass)
-	ok = easyhash.VerifyBcrypt(pass, bcrypt)
-	fmt.Println("bcrypt:", ok)
-
-	// MD5（仅兼容/不推荐）
-	fmt.Println("md5:", easyhash.CreateMD5(pass))
+	fmt.Println("verified:", ok)
 }
 ```
 
-## 说明
+## 高层 API
 
-- 默认盐值为 `DefaultSalt`，在哈希前拼接到密码后。
-- 建议优先使用 `Argon2id` 或 `bcrypt`。
-- 示例代码见 `example/userPassword.go`。
+- `Hash(password, opts...)` 默认使用 `Argon2id`
+- `Verify(password, encodedHash)` 同时支持新格式和 legacy 格式
+- `Identify(encodedHash)` 用于识别算法和迁移诊断
+- `NeedsRehash(encodedHash, policy)` 用于判断是否需要升级
+- `VerifyAndUpgrade(password, encodedHash, policy)` 用于校验后平滑升级
+
+## 兼容 API
+
+现有低层 API 仍然保留：
+
+- `CreateArgon2` / `VerifyArgon2`
+- `CreatePBKDF2` / `VerifyPBKDF2`
+- `CreateScrypt` / `VerifyScrypt`
+- `CreateBcrypt` / `VerifyBcrypt`
+- `CreateMD5`
+
+## 当前目录骨架
+
+```text
+easyhash/
+  crypto.go
+  errors.go
+  format.go
+  hash.go
+  options.go
+  policy.go
+  types.go
+  docs/roadmap.md
+  examples/basic/main.go
+```
+
+## 安全说明
+
+- Hash 不是加密，不能被“解密”。
+- 新的密码存储优先使用 `Argon2id` 或 `bcrypt`。
+- `MD5` 仅用于兼容旧数据，不应用于新的密码存储。
+- `DefaultSalt` 目前仍保留用于兼容，但它更接近全局 pepper 风格的后缀，而不是每条哈希独立随机 salt。
+- token hash、HMAC、checksum 等能力在 roadmap 中规划，当前仓库仍然主要是密码哈希库。
+
+## 示例
+
+- 推荐高层示例：`examples/basic/main.go`
+- 兼容旧接口示例：`example/userPassword.go`
+
+## Roadmap
+
+仓库内演进计划见 `docs/roadmap.md`。

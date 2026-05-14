@@ -5,7 +5,7 @@
 ![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go&logoColor=white)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gofurry/easyhash)](https://goreportcard.com/report/github.com/gofurry/easyhash)
 
-**English | [中文文档](docs/zh/README_zh.md)**
+**English | [中文文档](docs/zh/README.md)**
 
 A small Go toolkit for password hashing, hash verification, and future migration-friendly helpers.
 

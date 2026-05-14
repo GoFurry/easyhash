@@ -70,6 +70,7 @@ func main() {
 ## 文档导航
 
 - 英文使用说明：`docs/usage.md`
+- 中文使用说明：`docs/zh/usage.md`
 - 中文路线图：`docs/roadmap.md`
 - 示例索引：`examples/README.md`
 

@@ -1,6 +1,5 @@
-// Package easyhash provides secure password hashing utilities with multiple algorithms
-// including PBKDF2, Argon2, scrypt, and bcrypt. Each algorithm includes configurable
-// parameters and uses a global salt for additional security.
+// Package easyhash provides password hashing helpers and compatibility utilities
+// for PBKDF2, Argon2id, scrypt, bcrypt, and legacy MD5 verification.
 
 package easyhash
 
@@ -13,6 +12,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -22,7 +22,8 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-// DefaultSalt is a global salt used across all hashing algorithms for additional security
+// DefaultSalt is a package-wide password suffix retained for backwards compatibility.
+// It behaves closer to a global pepper than to a per-hash random salt.
 const DefaultSalt = "AwesomeGolangCrypto"
 
 // ====================== MD5 ======================
@@ -154,6 +155,11 @@ func DefaultArgon2() Argon2 {
 // CreateArgon2 generates an Argon2id hash for the given password using the provided configuration.
 // Returns a base64-encoded string in format: salt:time:memory:threads:hash
 func CreateArgon2(cfg Argon2, password string) (string, error) {
+	timeCost, memoryCost, threads, keyLen, err := validateArgon2Config(cfg)
+	if err != nil {
+		return "", err
+	}
+
 	salt := make([]byte, cfg.saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return "", fmt.Errorf("failed to generate salt: %w", err)
@@ -165,10 +171,10 @@ func CreateArgon2(cfg Argon2, password string) (string, error) {
 	hash := argon2.IDKey(
 		pwd,
 		salt,
-		uint32(cfg.argon2Time),
-		uint32(cfg.argon2Memory),
-		uint8(cfg.argon2Threads),
-		uint32(cfg.argon2KeyLen),
+		timeCost,
+		memoryCost,
+		threads,
+		keyLen,
 	)
 
 	saltB64 := base64.StdEncoding.EncodeToString(salt)
@@ -194,15 +200,24 @@ func VerifyArgon2(password, storedHash string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to parse time: %w", err)
 	}
+	if time <= 0 || time > math.MaxUint32 {
+		return false, errors.New("time must be between 1 and 4294967295")
+	}
 
 	memory, err := strconv.Atoi(memoryStr)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse memory: %w", err)
 	}
+	if memory <= 0 || memory > math.MaxUint32 {
+		return false, errors.New("memory must be between 1 and 4294967295")
+	}
 
 	threads, err := strconv.Atoi(threadsStr)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse threads: %w", err)
+	}
+	if threads <= 0 || threads > math.MaxUint8 {
+		return false, errors.New("threads must be between 1 and 255")
 	}
 
 	salt, err := base64.StdEncoding.DecodeString(saltB64)
@@ -228,6 +243,23 @@ func VerifyArgon2(password, storedHash string) (bool, error) {
 	)
 
 	return subtle.ConstantTimeCompare(newHash, originalHash) == 1, nil
+}
+
+func validateArgon2Config(cfg Argon2) (timeCost uint32, memoryCost uint32, threads uint8, keyLen uint32, err error) {
+	if cfg.argon2Time <= 0 || cfg.argon2Time > math.MaxUint32 {
+		return 0, 0, 0, 0, errors.New("argon2 time must be between 1 and 4294967295")
+	}
+	if cfg.argon2Memory <= 0 || cfg.argon2Memory > math.MaxUint32 {
+		return 0, 0, 0, 0, errors.New("argon2 memory must be between 1 and 4294967295")
+	}
+	if cfg.argon2Threads <= 0 || cfg.argon2Threads > math.MaxUint8 {
+		return 0, 0, 0, 0, errors.New("argon2 threads must be between 1 and 255")
+	}
+	if cfg.argon2KeyLen <= 0 || cfg.argon2KeyLen > math.MaxUint32 {
+		return 0, 0, 0, 0, errors.New("argon2 key length must be between 1 and 4294967295")
+	}
+
+	return uint32(cfg.argon2Time), uint32(cfg.argon2Memory), uint8(cfg.argon2Threads), uint32(cfg.argon2KeyLen), nil
 }
 
 // ====================== scrypt ======================

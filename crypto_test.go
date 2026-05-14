@@ -1,6 +1,7 @@
 package easyhash
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -199,6 +200,44 @@ func TestArgon2(t *testing.T) {
 	}
 	if valid {
 		t.Error("Wrong password should not verify")
+	}
+}
+
+func TestCreateArgon2RejectsOutOfRangeThreads(t *testing.T) {
+	cfg := DefaultArgon2()
+	cfg.argon2Threads = 256
+
+	if _, err := CreateArgon2(cfg, testPassword); err == nil {
+		t.Fatal("expected CreateArgon2 to reject out-of-range threads")
+	}
+}
+
+func TestVerifyArgon2RejectsOutOfRangeStoredParameters(t *testing.T) {
+	validHash, err := CreateArgon2(DefaultArgon2(), testPassword)
+	if err != nil {
+		t.Fatalf("CreateArgon2 failed: %v", err)
+	}
+
+	parts := strings.Split(validHash, ":")
+	if len(parts) != 5 {
+		t.Fatalf("unexpected argon2 hash format: %q", validHash)
+	}
+
+	parts[1] = "4294967296"
+	if _, err := VerifyArgon2(testPassword, strings.Join(parts, ":")); err == nil {
+		t.Fatal("expected VerifyArgon2 to reject out-of-range time")
+	}
+
+	parts[1] = "3"
+	parts[2] = "4294967296"
+	if _, err := VerifyArgon2(testPassword, strings.Join(parts, ":")); err == nil {
+		t.Fatal("expected VerifyArgon2 to reject out-of-range memory")
+	}
+
+	parts[2] = "65536"
+	parts[3] = "256"
+	if _, err := VerifyArgon2(testPassword, strings.Join(parts, ":")); err == nil {
+		t.Fatal("expected VerifyArgon2 to reject out-of-range threads")
 	}
 }
 

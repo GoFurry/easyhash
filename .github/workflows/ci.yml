@@ -7,15 +7,18 @@ on:
       - dev
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -27,4 +30,4 @@ jobs:
         run: go test ./...
 
       - name: Benchmark smoke test
-        run: go test -run ^$ -bench BenchmarkEngineMiddleware -benchtime=1x ./...
+        run: go test -run ^$ -bench BenchmarkCreatePBKDF2 -benchtime=1x ./...

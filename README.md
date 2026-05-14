@@ -5,14 +5,21 @@
 ![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go&logoColor=white)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gofurry/easyhash)](https://goreportcard.com/report/github.com/gofurry/easyhash)
 
-**English | [中文文档](README_zh.md)**
+**English | [中文文档](docs/zh/README.md)**
 
-A simple Go password hashing helper that provides create/verify helpers for MD5 (legacy only), PBKDF2, Argon2id, scrypt, and bcrypt, with built-in default parameters.
+A small Go toolkit for password hashing, hash verification, and future migration-friendly helpers.
+
+The repository currently keeps the existing low-level algorithm-specific APIs for compatibility, and now starts exposing a higher-level library skeleton around:
+
+- `Hash`
+- `Verify`
+- `Identify`
+- `NeedsRehash`
+- `VerifyAndUpgrade`
 
 ## Installation
 
 ```bash
-# If you use private modules, set GOPRIVATE to avoid public checksum database lookups.
 go get github.com/gofurry/easyhash
 ```
 
@@ -23,6 +30,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofurry/easyhash"
 )
@@ -30,34 +38,74 @@ import (
 func main() {
 	pass := "12345678"
 
-	// PBKDF2
-	pbkdf2, _ := easyhash.CreatePBKDF2(easyhash.DefaultPBKDF2(), pass)
-	ok, _ := easyhash.VerifyPBKDF2(pass, pbkdf2)
-	fmt.Println("pbkdf2:", ok)
+	hash, err := easyhash.Hash(pass)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Argon2id
-	argon2, _ := easyhash.CreateArgon2(easyhash.DefaultArgon2(), pass)
-	ok, _ = easyhash.VerifyArgon2(pass, argon2)
-	fmt.Println("argon2:", ok)
+	ok, err := easyhash.Verify(pass, hash)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Scrypt
-	scrypt, _ := easyhash.CreateScrypt(easyhash.DefaultScrypt(), pass)
-	ok, _ = easyhash.VerifyScrypt(pass, scrypt)
-	fmt.Println("scrypt:", ok)
-
-	// Bcrypt
-	bcrypt, _ := easyhash.CreateBcrypt(12, pass)
-	ok = easyhash.VerifyBcrypt(pass, bcrypt)
-	fmt.Println("bcrypt:", ok)
-
-	// MD5 (legacy / not recommended)
-	fmt.Println("md5:", easyhash.CreateMD5(pass))
+	fmt.Println("verified:", ok)
 }
 ```
 
-## Notes
+## High-Level API
 
-- The default global salt is `DefaultSalt`, appended to the password before hashing.
-- Prefer `Argon2id` or `bcrypt` for password hashing.
-- Example code: `example/userPassword.go`.
+- `Hash(password, opts...)` defaults to PBKDF2-SHA256.
+- `Verify(password, encodedHash)` accepts the new easyhash format and legacy stored hashes.
+- `Identify(encodedHash)` helps with migration and diagnostics.
+- `NeedsRehash(encodedHash, policy)` reports whether a hash should be upgraded.
+- `VerifyAndUpgrade(password, encodedHash, policy)` verifies and returns a replacement hash when policy requires it.
 
+## Compatibility API
+
+The existing low-level APIs remain available:
+
+- `CreateArgon2` / `VerifyArgon2`
+- `CreatePBKDF2` / `VerifyPBKDF2`
+- `CreateScrypt` / `VerifyScrypt`
+- `CreateBcrypt` / `VerifyBcrypt`
+- `CreateMD5`
+
+## Package Layout
+
+```text
+easyhash/
+  crypto.go
+  errors.go
+  format.go
+  hash.go
+  options.go
+  policy.go
+  types.go
+  docs/usage.md
+  docs/zh/README_zh.md
+  docs/roadmap.md
+  examples/README.md
+  examples/password/main.go
+```
+
+## Security Notes
+
+- Hashing is not encryption.
+- PBKDF2-SHA256 is the default high-level algorithm in `Hash`.
+- Use `WithArgon2id()` or `WithBcrypt()` when you want a different tradeoff.
+- `MD5` is legacy-only and should not be used for new password storage.
+- `DefaultSalt` exists for backwards compatibility and behaves closer to a global pepper-like suffix than to a per-hash salt.
+- File and token helpers are planned, but the current package is still primarily a password hashing library.
+
+## Examples
+
+- Example index: `examples/README.md`
+- Password example: `examples/password/main.go`
+
+## Usage Guide
+
+See `docs/usage.md` for a focused walkthrough of the high-level API and migration flow.
+
+## Roadmap
+
+See `docs/roadmap.md` for the current Chinese roadmap used to track repository evolution.

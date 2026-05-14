@@ -12,7 +12,7 @@ func TestHashVerifyDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Identify failed: %v", err)
 	}
-	if algorithm != AlgorithmArgon2id {
+	if algorithm != AlgorithmPBKDF2 {
 		t.Fatalf("unexpected algorithm: %s", algorithm)
 	}
 
@@ -113,5 +113,13 @@ func TestVerifyAndUpgradeLegacyPBKDF2(t *testing.T) {
 	}
 	if _, err := parseEasyHash(upgradedHash); err != nil {
 		t.Fatalf("expected upgraded hash to use easyhash format: %v", err)
+	}
+
+	algorithm, err := Identify(upgradedHash)
+	if err != nil {
+		t.Fatalf("Identify upgraded hash failed: %v", err)
+	}
+	if algorithm != AlgorithmPBKDF2 {
+		t.Fatalf("unexpected upgraded algorithm: %s", algorithm)
 	}
 }

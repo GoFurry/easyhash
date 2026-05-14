@@ -41,34 +41,98 @@ func parseEasyHash(encoded string) (parsedEasyHash, error) {
 		return parsedEasyHash{}, err
 	}
 
-	return parsedEasyHash{
+	parsed := parsedEasyHash{
 		Algorithm: Algorithm(parts[3]),
 		Params:    params,
 		Salt:      parts[5],
 		Digest:    parts[6],
-	}, nil
+	}
+
+	if err := validateParsedEasyHash(parsed); err != nil {
+		return parsedEasyHash{}, err
+	}
+
+	return parsed, nil
 }
 
 func parseParamMap(raw string) (map[string]int, error) {
 	params := make(map[string]int)
 	if raw == "" {
-		return params, nil
+		return nil, ErrInvalidHashFormat
 	}
 
 	for _, part := range strings.Split(raw, ",") {
 		kv := strings.SplitN(part, "=", 2)
-		if len(kv) != 2 {
+		if len(kv) != 2 || kv[0] == "" || kv[1] == "" {
 			return nil, ErrInvalidHashFormat
+		}
+		if _, exists := params[kv[0]]; exists {
+			return nil, fmt.Errorf("%w: duplicate parameter %q", ErrInvalidHashFormat, kv[0])
 		}
 
 		value, err := strconv.Atoi(kv[1])
-		if err != nil {
+		if err != nil || value <= 0 {
 			return nil, fmt.Errorf("%w: invalid parameter %q", ErrInvalidHashFormat, kv[0])
 		}
 		params[kv[0]] = value
 	}
 
 	return params, nil
+}
+
+func validateParsedEasyHash(parsed parsedEasyHash) error {
+	if parsed.Salt == "" || parsed.Digest == "" {
+		return ErrInvalidHashFormat
+	}
+
+	salt, err := base64.StdEncoding.DecodeString(parsed.Salt)
+	if err != nil || len(salt) == 0 {
+		return fmt.Errorf("%w: invalid salt", ErrInvalidHashFormat)
+	}
+
+	digest, err := base64.StdEncoding.DecodeString(parsed.Digest)
+	if err != nil || len(digest) == 0 {
+		return fmt.Errorf("%w: invalid digest", ErrInvalidHashFormat)
+	}
+
+	switch parsed.Algorithm {
+	case AlgorithmPBKDF2:
+		return validateParamSet(parsed.Params, "i", "l")
+	case AlgorithmArgon2id:
+		return validateParamSet(parsed.Params, "m", "t", "p", "l")
+	case AlgorithmScrypt:
+		if err := validateParamSet(parsed.Params, "n", "r", "p", "l"); err != nil {
+			return err
+		}
+		if !isPowerOfTwo(parsed.Params["n"]) {
+			return fmt.Errorf("%w: invalid parameter %q", ErrInvalidHashFormat, "n")
+		}
+		return nil
+	default:
+		return fmt.Errorf("%w: %q", ErrUnsupportedAlgorithm, parsed.Algorithm)
+	}
+}
+
+func validateParamSet(params map[string]int, required ...string) error {
+	if len(params) != len(required) {
+		return ErrInvalidHashFormat
+	}
+
+	allowed := make(map[string]struct{}, len(required))
+	for _, key := range required {
+		allowed[key] = struct{}{}
+		if _, ok := params[key]; !ok {
+			return fmt.Errorf("%w: missing parameter %q", ErrInvalidHashFormat, key)
+		}
+	}
+
+	for key := range params {
+		if _, ok := allowed[key]; !ok {
+			return fmt.Errorf("%w: unexpected parameter %q", ErrInvalidHashFormat, key)
+		}
+	}
+
+	return nil
 }
 
 func decodedLength(b64 string) (int, error) {

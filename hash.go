@@ -8,7 +8,7 @@ import (
 )
 
 // Hash hashes a password using the selected high-level algorithm.
-// The default algorithm is Argon2id.
+// The default algorithm is PBKDF2-SHA256.
 func Hash(password string, opts ...Option) (string, error) {
 	cfg := applyOptions(opts...)
 

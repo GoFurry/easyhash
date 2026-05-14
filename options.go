@@ -17,7 +17,7 @@ type Option func(*Options)
 // DefaultOptions returns the default high-level hashing configuration.
 func DefaultOptions() Options {
 	return Options{
-		Algorithm:  AlgorithmArgon2id,
+		Algorithm:  AlgorithmPBKDF2,
 		Argon2id:   DefaultArgon2(),
 		PBKDF2:     DefaultPBKDF2(),
 		Scrypt:     DefaultScrypt(),
